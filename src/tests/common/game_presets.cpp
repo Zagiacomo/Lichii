@@ -109,3 +109,26 @@ TEST_CASE("Declining the MKW preset preserves global and per-game preferences", 
         CHECK(settings->resolution_setup.UsingGlobal() == !per_game);
     }
 }
+
+TEST_CASE("Accepted OoT settings apply per session and keep GPU accuracy", "[game_presets]") {
+    auto settings = std::make_unique<Settings::Values>();
+    SetConflictingPreferences(*settings, false);
+    settings->accelerate_astc.SetValue(Settings::AstcDecodeMode::Cpu);
+    CHECK_FALSE(Settings::ApplyOcarinaOfTimePreset(*settings, Settings::OcarinaOfTimeProgramId,
+                                                   false));
+    CHECK_FALSE(Settings::ApplyOcarinaOfTimePreset(*settings, Settings::MarioKartWorldProgramId,
+                                                   true));
+    REQUIRE(Settings::ApplyOcarinaOfTimePreset(*settings, Settings::OcarinaOfTimeProgramId, true));
+    CHECK(settings->renderer_backend.GetValue() == Settings::RendererBackend::Vulkan);
+    CHECK(settings->resolution_setup.GetValue() == Settings::ResolutionSetup::Res1X);
+    CHECK(settings->gpu_accuracy.GetValue() == Settings::GpuAccuracy::High);
+    CHECK(settings->use_asynchronous_shaders.GetValue());
+    CHECK(settings->accelerate_astc.GetValue() == Settings::AstcDecodeMode::Gpu);
+    CHECK(settings->astc_recompression.GetValue() == Settings::AstcRecompression::Bc3);
+    CHECK(settings->vram_usage_mode.GetValue() == Settings::VramUsageMode::Conservative);
+    CHECK_FALSE(settings->use_reactive_flushing.GetValue());
+    CHECK(settings->vsync_mode.GetValue() == Settings::VSyncMode::FifoRelaxed);
+    // The saved global preferences are untouched.
+    CHECK(settings->use_reactive_flushing.GetValue(true));
+    CHECK(settings->accelerate_astc.GetValue(true) == Settings::AstcDecodeMode::Cpu);
+}
