@@ -842,6 +842,7 @@ void Scheduler::AllocateNewContext() {
 }
 
 void Scheduler::InvalidateState() {
+    ++recording_epoch;
     state.graphics_pipeline = nullptr;
     state.rescaling_defined = false;
     state.descriptor_buffer_bound = false;
@@ -861,6 +862,7 @@ void Scheduler::EndRenderPass()
         if (!state.renderpass) {
             return;
         }
+        ++recording_epoch;
         fragment_barrier_pending = false;
         render_pass_has_stores = false;
 
